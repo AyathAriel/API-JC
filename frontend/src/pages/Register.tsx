@@ -11,10 +11,14 @@ const Register = () => {
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [registered, setRegistered] = useState(false)
+  
+  // Usar opciones simplificadas para el hook
   const { register } = useAuth({
-    redirectAuthenticated: true,
-    loadOnMount: false // Cambiado a false para evitar redirecciones automáticas
+    redirectAuthenticated: false,
+    loadOnMount: false
   })
+  
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,9 +61,6 @@ const Register = () => {
     }
 
     try {
-      toast.loading('Registrando usuario...', { id: 'registerProcess' })
-      console.log('Enviando datos de registro:', { email, fullName, roles });
-      
       const { error: registrationError } = await register({
         email,
         password,
@@ -72,31 +73,40 @@ const Register = () => {
       
       if (registrationError) {
         console.error('Error de registro:', registrationError);
-        toast.error('Error de registro: ' + (registrationError.message || 'Intenta de nuevo.'), { id: 'registerProcess' });
         setError('Error al registrar usuario: ' + (registrationError.message || 'Por favor intente nuevamente.'));
         setIsLoading(false);
         return;
       }
       
-      toast.success('Registro exitoso. Redireccionando...', { id: 'registerProcess' });
+      // Marcar como registrado y mostrar mensaje de éxito
+      setRegistered(true);
       
-      // Redirección manual para asegurar que funcione
+      // Redirección simplificada que solo ocurre una vez
       setTimeout(() => {
-        try {
-          navigate('/', { replace: true });
-        } catch (navError) {
-          console.error('Error al navegar:', navError);
-          // Como último recurso, recargar la página
-          window.location.href = '/';
-        }
-      }, 1500);
+        window.location.href = '/';
+      }, 2000);
+      
     } catch (err) {
       console.error('Error inesperado en registro:', err);
-      toast.error('Error inesperado al registrar usuario.', { id: 'registerProcess' });
       setError('Error inesperado al registrar usuario. Por favor intente de nuevo.');
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // Si ya se registró, mostrar mensaje de éxito
+  if (registered) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+          <div className="text-green-500 text-6xl mb-4">✓</div>
+          <h1 className="text-2xl font-bold text-green-800 mb-4">¡Registro Exitoso!</h1>
+          <p className="text-gray-600 mb-6">Tu cuenta ha sido creada correctamente.</p>
+          <p className="text-gray-600 mb-8">Serás redirigido en unos segundos...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-500 mx-auto"></div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -135,20 +135,19 @@ export const useAuth = (options: UseAuthOptions = {}) => {
         return result;
       }
       
-      toast.success('Registro exitoso. Redirigiendo...', { id: 'register' });
+      toast.success('Registro exitoso', { id: 'register' });
       
-      // Redirección manual para asegurar que funcione
-      setTimeout(() => {
-        try {
-          navigate('/', { replace: true });
-        } catch (navError) {
-          console.error('Error al navegar:', navError);
-          // Como último recurso, recargar la página
-          window.location.href = '/';
-        }
-      }, 1500);
+      // Dar tiempo para que Supabase procese los cambios antes de redirigir
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      return { error: null };
+      try {
+        // Redirección manual simplificada
+        window.location.href = '/';
+        return { error: null };
+      } catch (error) {
+        console.error('Error en redirección post-registro:', error);
+        return { error: null }; // Aún así consideramos el registro exitoso
+      }
     } catch (error) {
       console.error('Error inesperado en registro:', error);
       toast.error('Error inesperado en registro de usuario', { id: 'register' });

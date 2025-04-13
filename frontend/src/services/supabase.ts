@@ -18,9 +18,22 @@ if (import.meta.env.DEV) {
   
   // Almacenar IDs admin para verificación local
   localStorage.setItem('supabase.admin.ids', JSON.stringify(ADMIN_IDS))
+  
+  // Aumentar tiempo de expiración de la sesión
+  localStorage.setItem('supabase.auth.sessionExpirySeconds', '604800') // 7 días
+  
+  // Forzar modo offline para desarrollo si es necesario
+  // localStorage.setItem('supabase.auth.offline', 'true')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// Configuración de cliente con opciones adicionales para mejorar el registro
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+})
 
 // Interfaz para tipos de autenticación
 export interface AuthResponse {
