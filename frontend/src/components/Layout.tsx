@@ -12,6 +12,7 @@ import {
   FaTimes,
   FaBell
 } from 'react-icons/fa';
+import { MdDashboard, MdDescription, MdPerson, MdGroups, MdMilitaryTech, MdLocalShipping, MdSettings, MdQrCode2 } from 'react-icons/md';
 
 interface LayoutProps {
   children: ReactNode;
@@ -26,18 +27,27 @@ const Layout = ({ children }: LayoutProps) => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const sidebarItems = [
+    { name: 'Recepción', path: '/solicitudes', icon: <MdDescription /> },
+    { name: 'Representante', path: '/representante', icon: <MdPerson /> },
+    { name: 'Trabajo Social', path: '/trabajo-social', icon: <MdGroups /> },
+    { name: 'Despacho Superior', path: '/despacho-superior', icon: <MdMilitaryTech /> },
+    { name: 'Entregas', path: '/entregas', icon: <MdLocalShipping /> },
+    { name: 'Configuración', path: '/configuracion', icon: <MdSettings /> },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar - Desktop */}
       <div className={`bg-green-600 text-white w-64 fixed inset-y-0 left-0 transform transition-transform duration-300 ease-in-out z-20 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
-        <div className="flex items-center justify-between h-16 px-4 border-b border-green-500">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-yellow-500">
           <div className="flex items-center">
             <span className="font-bold text-xl">Juntas Comunales</span>
           </div>
           <button 
-            className="lg:hidden text-white focus:outline-none" 
+            className="lg:hidden text-black focus:outline-none" 
             onClick={toggleSidebar}
           >
             <FaTimes size={20} />
@@ -46,53 +56,21 @@ const Layout = ({ children }: LayoutProps) => {
         
         <div className="py-4 overflow-y-auto">
           <nav className="px-2 space-y-1">
-            <Link
-              to="/solicitudes"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-all ${
-                location.pathname === '/solicitudes' || location.pathname === '/'
-                  ? 'bg-green-700 text-white'
-                  : 'text-green-100 hover:bg-green-500 hover:text-white'
-              }`}
-            >
-              <FaClipboardList className="mr-3 h-5 w-5" />
-              Recepción
-            </Link>
-            
-            <Link
-              to="/representante"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-all ${
-                location.pathname.includes('/representante')
-                  ? 'bg-green-700 text-white'
-                  : 'text-green-100 hover:bg-green-500 hover:text-white'
-              }`}
-            >
-              <FaUserTie className="mr-3 h-5 w-5" />
-              Representante
-            </Link>
-            
-            <Link
-              to="/trabajo-social"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-all ${
-                location.pathname.includes('/trabajo-social')
-                  ? 'bg-green-700 text-white'
-                  : 'text-green-100 hover:bg-green-500 hover:text-white'
-              }`}
-            >
-              <FaUsers className="mr-3 h-5 w-5" />
-              Trabajo Social
-            </Link>
-            
-            <Link
-              to="/despacho-superior"
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-all ${
-                location.pathname.includes('/despacho-superior')
-                  ? 'bg-green-700 text-white'
-                  : 'text-green-100 hover:bg-green-500 hover:text-white'
-              }`}
-            >
-              <FaBriefcase className="mr-3 h-5 w-5" />
-              Despacho Superior
-            </Link>
+            {sidebarItems.slice(0, -1).map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-all ${
+                  (item.path === '/solicitudes' && (location.pathname === '/solicitudes' || location.pathname === '/')) ||
+                  (item.path !== '/solicitudes' && location.pathname.includes(item.path))
+                    ? 'bg-green-700 text-white'
+                    : 'text-green-100 hover:bg-green-500 hover:text-white'
+                }`}
+              >
+                <span className="mr-3 h-5 w-5">{item.icon}</span>
+                {item.name}
+              </Link>
+            ))}
             
             <div className="pt-4 mt-4 border-t border-green-500">
               <h3 className="px-4 text-xs font-semibold text-green-200 uppercase tracking-wider">
@@ -113,15 +91,15 @@ const Layout = ({ children }: LayoutProps) => {
             </Link>
             
             <Link
-              to="/configuracion"
+              to={sidebarItems[sidebarItems.length - 1].path}
               className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-all ${
-                location.pathname.includes('/configuracion')
+                location.pathname.includes(sidebarItems[sidebarItems.length - 1].path)
                   ? 'bg-green-700 text-white'
                   : 'text-green-100 hover:bg-green-500 hover:text-white'
               }`}
             >
-              <FaCog className="mr-3 h-5 w-5" />
-              Configuración
+              <span className="mr-3 h-5 w-5">{sidebarItems[sidebarItems.length - 1].icon}</span>
+              {sidebarItems[sidebarItems.length - 1].name}
             </Link>
           </nav>
         </div>
@@ -145,6 +123,7 @@ const Layout = ({ children }: LayoutProps) => {
                location.pathname.includes('/representante') ? 'Panel del Representante' :
                location.pathname.includes('/trabajo-social') ? 'Trabajo Social' :
                location.pathname.includes('/despacho-superior') ? 'Despacho Superior/Secretaría' :
+               location.pathname.includes('/entregas') ? 'Gestión de Entregas' :
                location.pathname.includes('/agente-ia') ? 'Asistente IA' :
                location.pathname.includes('/configuracion') ? 'Configuración' : 'Juntas Comunales'}
             </h1>

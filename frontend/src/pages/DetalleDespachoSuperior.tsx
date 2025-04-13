@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaCheck, FaTimes, FaCommentAlt, FaUserCheck, FaUserTimes, FaHistory, FaFileDownload, FaClipboardCheck, FaExclamationTriangle, FaWhatsapp, FaEnvelope, FaPrint } from 'react-icons/fa';
+import { FaArrowLeft, FaCheck, FaTimes, FaCommentAlt, FaUserCheck, FaUserTimes, FaHistory, FaFileDownload, FaClipboardCheck, FaExclamationTriangle, FaWhatsapp, FaEnvelope, FaPrint, FaCamera, FaUpload, FaSpinner, FaTimesCircle, FaCheckCircle, FaBoxOpen } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 interface Ciudadano {
@@ -70,6 +70,16 @@ const DetalleDespachoSuperior: React.FC = () => {
   const [motivoRechazo, setMotivoRechazo] = useState<string>('');
   const [materialesEditados, setMaterialesEditados] = useState<Material[]>([]);
   const [mostrarHistorial, setMostrarHistorial] = useState<boolean>(false);
+
+  // Estados para el registro de entregas
+  const [mostrarModalEntrega, setMostrarModalEntrega] = useState<boolean>(false);
+  const [fotos, setFotos] = useState<File[]>([]);
+  const [fotosPreview, setFotosPreview] = useState<string[]>([]);
+  const [comentarioEntrega, setComentarioEntrega] = useState<string>('');
+  const [loadingEntrega, setLoadingEntrega] = useState<boolean>(false);
+
+  // Referencia al input de archivos
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Mock de historial de la solicitud
   const historialSolicitud = [
@@ -359,6 +369,148 @@ const DetalleDespachoSuperior: React.FC = () => {
     }, 500);
   };
 
+  // Función para activar la selección de fotos
+  const activarSelectorFotos = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Manejar la selección de fotos
+  const handleFotosChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const archivosSeleccionados = e.target.files;
+    
+    if (archivosSeleccionados) {
+      // Convertir FileList a Array
+      const nuevasFotos = Array.from(archivosSeleccionados);
+      
+      // Validar tipo de archivo (solo imágenes)
+      const sonImagenes = nuevasFotos.every(file => 
+        file.type.startsWith('image/jpeg') || 
+        file.type.startsWith('image/png') || 
+        file.type.startsWith('image/jpg')
+      );
+      
+      if (!sonImagenes) {
+        toast.error('Solo se permiten archivos de imagen (JPG, JPEG, PNG)');
+        return;
+      }
+      
+      // Validar tamaño (máximo 5MB por archivo)
+      const tamañoValido = nuevasFotos.every(file => file.size <= 5 * 1024 * 1024);
+      
+      if (!tamañoValido) {
+        toast.error('Cada imagen debe ser menor a 5MB');
+        return;
+      }
+      
+      // Actualizar estado de fotos
+      setFotos(prevFotos => [...prevFotos, ...nuevasFotos]);
+      
+      // Generar previsualizaciones
+      const nuevasPrevisualizaciones = nuevasFotos.map(file => URL.createObjectURL(file));
+      setFotosPreview(prevPreviews => [...prevPreviews, ...nuevasPrevisualizaciones]);
+    }
+  };
+
+  // Eliminar una foto
+  const eliminarFoto = (index: number) => {
+    // Liberar URL de objeto para evitar fugas de memoria
+    URL.revokeObjectURL(fotosPreview[index]);
+    
+    // Actualizar estados
+    setFotos(fotos.filter((_, i) => i !== index));
+    setFotosPreview(fotosPreview.filter((_, i) => i !== index));
+  };
+
+  // Registrar la entrega
+  const handleRegistrarEntrega = async () => {
+    if (!solicitud) {
+      toast.error('No hay información de la solicitud');
+      return;
+    }
+    
+    if (fotos.length === 0) {
+      toast.error('Por favor, agregue al menos una foto de la entrega');
+      return;
+    }
+    
+    setLoadingEntrega(true);
+    const toastId = toast.loading('Procesando entrega...');
+    
+    try {
+      // Convertir fotos a base64 (simulando subida a servidor)
+      const fotosBase64Promises = fotos.map(file => 
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        })
+      );
+      
+      const fotosBase64 = await Promise.all(fotosBase64Promises);
+      
+      // Fecha actual para las fotos
+      const fechaEntrega = new Date().toISOString();
+      
+      // Crear documentos para la solicitud
+      const nuevosDocumentos = fotosBase64.map((base64, index) => ({
+        id: `entrega_${Date.now()}_${index}`,
+        nombre: `Foto de entrega ${index + 1}`,
+        tipo: 'imagen',
+        fecha_subida: fechaEntrega,
+        url: base64
+      }));
+      
+      // Actualizar la solicitud
+      const solicitudActualizada = {
+        ...solicitud,
+        estado: 'entregado',
+        estado_display: 'Entregado',
+        fecha_entrega: fechaEntrega,
+        documentos: [...solicitud.documentos, ...nuevosDocumentos],
+        comentarios: [
+          ...solicitud.comentarios,
+          {
+            id: Date.now(),
+            texto: `ENTREGA: ${comentarioEntrega || 'Materiales entregados al beneficiario.'}`,
+            usuario: 'Administrador',
+            fecha: fechaEntrega,
+            departamento: 'Despacho Superior'
+          }
+        ]
+      };
+      
+      // Simular guardado (en un sistema real, aquí se haría una llamada a la API)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Actualizar estado local
+      setSolicitud(solicitudActualizada);
+      
+      // Limpiar el formulario
+      setFotos([]);
+      setFotosPreview([]);
+      setComentarioEntrega('');
+      setMostrarModalEntrega(false);
+      
+      // Actualizar toast a éxito
+      toast.success('Entrega registrada exitosamente', { id: toastId });
+    } catch (error) {
+      console.error('Error al registrar entrega:', error);
+      toast.error('Error al registrar la entrega. Intente nuevamente.', { id: toastId });
+    } finally {
+      setLoadingEntrega(false);
+    }
+  };
+
+  // Limpiar URLs de objetos al desmontar
+  useEffect(() => {
+    return () => {
+      fotosPreview.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -386,6 +538,12 @@ const DetalleDespachoSuperior: React.FC = () => {
       </div>
     );
   }
+
+  // Verificar si la solicitud está aprobada por Despacho Superior y lista para entrega
+  const puedeEntregarse = solicitud.estado === 'aprobado_despacho' || 
+                           solicitud.aprobada_despacho || 
+                           solicitud.estado.includes('aprobado');
+  const yaEntregada = solicitud.estado === 'entregado' || solicitud.estado.includes('entregado');
 
   return (
     <div className="bg-gray-50 rounded-lg shadow transition-all duration-300">
@@ -748,6 +906,69 @@ const DetalleDespachoSuperior: React.FC = () => {
         </div>
       </div>
       
+      {/* Botones de acción en la parte superior */}
+      <div className="flex flex-wrap gap-2 justify-end md:justify-end mb-2 mt-4 px-6">
+        {/* Botón de aprobar */}
+        {!solicitud.aprobada_despacho && (
+          <button
+            onClick={handleAprobar}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
+          >
+            <FaUserCheck className="mr-2" />
+            Aprobar solicitud
+          </button>
+        )}
+        
+        {/* Botón de rechazar */}
+        {!solicitud.aprobada_despacho && (
+          <button
+            onClick={() => setMostrarModalRechazo(true)}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
+          >
+            <FaUserTimes className="mr-2" />
+            Rechazar solicitud
+          </button>
+        )}
+        
+        {/* Botón de registrar entrega - Solo visible si la solicitud está aprobada */}
+        {puedeEntregarse && !yaEntregada && (
+          <button
+            onClick={() => setMostrarModalEntrega(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+          >
+            <FaBoxOpen className="mr-2" />
+            Registrar entrega
+          </button>
+        )}
+        
+        {/* Botón de WhatsApp */}
+        <button
+          onClick={handleEnviarWhatsApp}
+          className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center"
+        >
+          <FaWhatsapp className="mr-2" />
+          WhatsApp
+        </button>
+        
+        {/* Botón de Email */}
+        <button
+          onClick={handleEnviarEmail}
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 flex items-center"
+        >
+          <FaEnvelope className="mr-2" />
+          Email
+        </button>
+        
+        {/* Botón de Imprimir */}
+        <button
+          onClick={handleImprimir}
+          className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 flex items-center"
+        >
+          <FaPrint className="mr-2" />
+          Imprimir
+        </button>
+      </div>
+
       {/* Modal de rechazo */}
       {mostrarModalRechazo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -783,6 +1004,132 @@ const DetalleDespachoSuperior: React.FC = () => {
                 }`}
               >
                 Confirmar rechazo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de registro de entrega */}
+      {mostrarModalEntrega && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Registrar entrega de materiales</h2>
+              <button 
+                onClick={() => setMostrarModalEntrega(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-700 mb-2">Detalles de la solicitud</h3>
+              <div className="bg-gray-50 p-4 rounded border border-gray-200">
+                <p className="text-sm mb-1">
+                  <span className="font-medium">ID:</span> {solicitud.id}
+                </p>
+                <p className="text-sm mb-1">
+                  <span className="font-medium">Solicitante:</span> {solicitud.ciudadano.nombre} {solicitud.ciudadano.apellido}
+                </p>
+                <p className="text-sm mb-1">
+                  <span className="font-medium">Cédula:</span> {solicitud.ciudadano.cedula}
+                </p>
+              </div>
+            </div>
+            
+            {/* Input oculto para seleccionar fotos */}
+            <input 
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/jpeg,image/png,image/jpg"
+              multiple
+              onChange={handleFotosChange}
+            />
+            
+            {/* Área para subir fotos */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fotos de la entrega <span className="text-red-500">*</span>
+              </label>
+              
+              <div 
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={activarSelectorFotos}
+              >
+                <FaCamera className="mx-auto text-gray-400 text-3xl mb-2" />
+                <p className="text-gray-600 mb-1">Haga clic para seleccionar fotos</p>
+                <p className="text-xs text-gray-500">JPG, JPEG o PNG (máx. 5MB por foto)</p>
+              </div>
+              
+              {/* Vista previa de fotos */}
+              {fotosPreview.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {fotosPreview.map((preview, index) => (
+                    <div key={index} className="relative">
+                      <img 
+                        src={preview} 
+                        alt={`Foto ${index + 1}`}
+                        className="w-full h-32 object-cover rounded border border-gray-200"
+                      />
+                      <button
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          eliminarFoto(index);
+                        }}
+                      >
+                        <FaTimesCircle />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Comentario de entrega */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Comentario de entrega
+              </label>
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="Agregue comentarios sobre la entrega, condiciones, observaciones, etc."
+                value={comentarioEntrega}
+                onChange={(e) => setComentarioEntrega(e.target.value)}
+              ></textarea>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setMostrarModalEntrega(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleRegistrarEntrega}
+                disabled={loadingEntrega || fotos.length === 0}
+                className={`px-4 py-2 rounded-md flex items-center ${
+                  loadingEntrega || fotos.length === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {loadingEntrega ? (
+                  <>
+                    <FaSpinner className="animate-spin mr-2" />
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <FaCheck className="mr-2" />
+                    Registrar entrega
+                  </>
+                )}
               </button>
             </div>
           </div>

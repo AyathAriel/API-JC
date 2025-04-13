@@ -173,6 +173,7 @@ const DespachoSuperior: React.FC = () => {
     direction: 'desc'
   })
   const [tabValue, setTabValue] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Definición de las pestañas
   const tabs = [
@@ -435,12 +436,22 @@ const DespachoSuperior: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
-          <FaUserTie className="inline-block mr-2 text-purple-600" />
-          Despacho Superior
-        </h1>
+    <div className="p-8 bg-gray-50 min-h-screen">
+      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: '#003366' }}>
+          <FaUserTie className="inline-block mr-2 text-blue-700" /> Despacho Superior
+        </Typography>
+        
+        <div className="flex space-x-4">
+          <Button 
+            variant="contained" 
+            startIcon={<FilterListIcon />}
+            onClick={() => setShowFilters(!showFilters)}
+            sx={{ bgcolor: '#0055A4', '&:hover': { bgcolor: '#003366' }}}
+          >
+            Filtros
+          </Button>
+        </div>
       </div>
       
       {/* Sección de tabs */}

@@ -29,6 +29,8 @@ import AIAgent from './AIAgent';
 // @ts-ignore
 import Configuracion from './pages/Configuracion';
 import { Toaster } from 'react-hot-toast';
+// @ts-ignore
+import Entregas from './pages/Entregas';
 
 function App() {
   return (
@@ -46,6 +48,7 @@ function App() {
           <Route path="/nueva-solicitud" element={<NuevaSolicitud />} />
           <Route path="/agente-ia" element={<AgenteIA />} />
           <Route path="/configuracion" element={<Configuracion />} />
+          <Route path="/entregas" element={<Entregas />} />
           <Route path="*" element={<div>No encontrado</div>} />
         </Routes>
       </Layout>

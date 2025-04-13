@@ -30,7 +30,9 @@ import {
   FaRobot,
   FaHome,
   FaTools,
-  FaClock
+  FaClock,
+  FaBoxOpen,
+  FaTruck
 } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 // Temporalmente comentadas las importaciones de Chart.js
@@ -82,6 +84,27 @@ interface StatsData {
   }[]
   solicitudesRecientes: Solicitud[]
   actividadesRecientes: Actividad[]
+  entregasPorMes: {
+    mes: string
+    cantidad: number
+  }[]
+  entregasPorSemana: {
+    semana: string
+    cantidad: number
+  }[]
+  usuariosActivos: {
+    nombre: string
+    departamento: string
+    entregas: number
+  }[]
+  tiposAyuda: {
+    tipo: string
+    cantidad: number
+  }[]
+  totalEntregas: number
+  entregasHoy: number
+  entregasSemana: number
+  entregasMes: number
 }
 
 interface Solicitud {
@@ -267,6 +290,44 @@ const Dashboard = () => {
       return new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
     })
     
+    // Generar datos adicionales para entregas
+    const entregasPorMes = [
+      { mes: 'Enero', cantidad: Math.floor(Math.random() * 30) + 10 },
+      { mes: 'Febrero', cantidad: Math.floor(Math.random() * 30) + 15 },
+      { mes: 'Marzo', cantidad: Math.floor(Math.random() * 30) + 20 },
+      { mes: 'Abril', cantidad: Math.floor(Math.random() * 30) + 25 },
+      { mes: 'Mayo', cantidad: Math.floor(Math.random() * 30) + 30 },
+      { mes: 'Junio', cantidad: Math.floor(Math.random() * 30) + 35 },
+    ];
+    
+    const entregasPorSemana = [
+      { semana: 'Semana 1', cantidad: Math.floor(Math.random() * 15) + 5 },
+      { semana: 'Semana 2', cantidad: Math.floor(Math.random() * 15) + 8 },
+      { semana: 'Semana 3', cantidad: Math.floor(Math.random() * 15) + 10 },
+      { semana: 'Semana 4', cantidad: Math.floor(Math.random() * 15) + 12 },
+    ];
+    
+    const usuariosActivos = [
+      { nombre: 'Carlos Ruiz', departamento: 'Almacén', entregas: Math.floor(Math.random() * 20) + 30 },
+      { nombre: 'María López', departamento: 'Despacho', entregas: Math.floor(Math.random() * 20) + 25 },
+      { nombre: 'Juan Pérez', departamento: 'Trabajo Social', entregas: Math.floor(Math.random() * 20) + 20 },
+      { nombre: 'Ana Martínez', departamento: 'Almacén', entregas: Math.floor(Math.random() * 20) + 15 },
+      { nombre: 'Pedro González', departamento: 'Despacho', entregas: Math.floor(Math.random() * 20) + 10 },
+    ];
+    
+    const tiposAyuda = [
+      { tipo: 'Materiales de construcción', cantidad: Math.floor(Math.random() * 50) + 50 },
+      { tipo: 'Alimentos', cantidad: Math.floor(Math.random() * 40) + 40 },
+      { tipo: 'Medicamentos', cantidad: Math.floor(Math.random() * 30) + 30 },
+      { tipo: 'Útiles escolares', cantidad: Math.floor(Math.random() * 20) + 20 },
+      { tipo: 'Ropa', cantidad: Math.floor(Math.random() * 10) + 10 },
+    ];
+    
+    const totalEntregas = entregasPorMes.reduce((acc, curr) => acc + curr.cantidad, 0);
+    const entregasHoy = Math.floor(Math.random() * 10) + 1;
+    const entregasSemana = Math.floor(Math.random() * 40) + 20;
+    const entregasMes = Math.floor(Math.random() * 100) + 50;
+    
     return {
       totalSolicitudes,
       pendientes,
@@ -279,7 +340,15 @@ const Dashboard = () => {
       solicitudesPorCategoria,
       solicitudesPorEstado,
       solicitudesRecientes,
-      actividadesRecientes
+      actividadesRecientes,
+      entregasPorMes,
+      entregasPorSemana,
+      usuariosActivos,
+      tiposAyuda,
+      totalEntregas,
+      entregasHoy,
+      entregasSemana,
+      entregasMes
     }
   }
   
@@ -552,26 +621,23 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-800 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Bienvenido a tu panel de administración de solicitudes</p>
+        <h1 className="text-2xl font-semibold text-gray-800 mb-2">Dashboard de Entregas</h1>
+        <p className="text-gray-600">Vista general de las entregas y distribución de ayudas</p>
       </div>
 
-      {/* Tarjetas con estadísticas */}
+      {/* Tarjetas con estadísticas de entregas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white rounded-lg shadow-sm p-5">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-gray-600 text-sm font-medium">Total de Solicitudes</h3>
-              <div className="text-2xl font-bold mt-2">{stats.totalSolicitudes}</div>
-              <div className="text-sm text-gray-500 mt-1">
-                {stats.pendientes} pendientes
-                <span className={`ml-2 ${stats.pendientes > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {stats.pendientes > 0 ? '+' : ''}
-                </span>
+              <h3 className="text-gray-600 text-sm font-medium">Total de Entregas</h3>
+              <div className="text-2xl font-bold mt-2">{stats.totalEntregas}</div>
+              <div className="text-sm text-green-500 mt-1">
+                +{Math.floor(stats.totalEntregas * 0.1)} respecto al mes anterior
               </div>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
-              <FaFileAlt className="text-green-600" />
+              <FaBoxOpen className="text-green-600" />
             </div>
           </div>
         </div>
@@ -579,17 +645,14 @@ const Dashboard = () => {
         <div className="bg-white rounded-lg shadow-sm p-5">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-gray-600 text-sm font-medium">Solicitudes Activas</h3>
-              <div className="text-2xl font-bold mt-2">{stats.aprobadas}</div>
-              <div className="text-sm text-gray-500 mt-1">
-                {stats.pendientes} pendientes
-                <span className={`ml-2 ${stats.pendientes > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {stats.pendientes > 0 ? '+' : ''}
-                </span>
+              <h3 className="text-gray-600 text-sm font-medium">Entregas de Hoy</h3>
+              <div className="text-2xl font-bold mt-2">{stats.entregasHoy}</div>
+              <div className="text-sm text-green-500 mt-1">
+                +{stats.entregasHoy} respecto a ayer
               </div>
             </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <FaUsers className="text-green-600" />
+            <div className="bg-blue-100 p-3 rounded-full">
+              <FaClock className="text-blue-600" />
             </div>
           </div>
         </div>
@@ -597,17 +660,14 @@ const Dashboard = () => {
         <div className="bg-white rounded-lg shadow-sm p-5">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-gray-600 text-sm font-medium">Materiales Entregados</h3>
-              <div className="text-2xl font-bold mt-2">{stats.solicitudesRecientes.length}</div>
-              <div className="text-sm text-gray-500 mt-1">
-                {stats.pendientes} pendientes
-                <span className={`ml-2 ${stats.pendientes > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {stats.pendientes > 0 ? '+' : ''}
-                </span>
+              <h3 className="text-gray-600 text-sm font-medium">Entregas esta Semana</h3>
+              <div className="text-2xl font-bold mt-2">{stats.entregasSemana}</div>
+              <div className="text-sm text-green-500 mt-1">
+                +{Math.floor(stats.entregasSemana * 0.15)} respecto a la semana anterior
               </div>
             </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <FaTools className="text-green-600" />
+            <div className="bg-purple-100 p-3 rounded-full">
+              <FaRegCalendarAlt className="text-purple-600" />
             </div>
           </div>
         </div>
@@ -615,17 +675,14 @@ const Dashboard = () => {
         <div className="bg-white rounded-lg shadow-sm p-5">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-gray-600 text-sm font-medium">Mantenimientos</h3>
-              <div className="text-2xl font-bold mt-2">{stats.actividadesRecientes.length}</div>
-              <div className="text-sm text-gray-500 mt-1">
-                {stats.pendientes} pendientes
-                <span className={`ml-2 ${stats.pendientes > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {stats.pendientes > 0 ? '+' : ''}
-                </span>
+              <h3 className="text-gray-600 text-sm font-medium">Entregas este Mes</h3>
+              <div className="text-2xl font-bold mt-2">{stats.entregasMes}</div>
+              <div className="text-sm text-green-500 mt-1">
+                +{Math.floor(stats.entregasMes * 0.08)} respecto al mes anterior
               </div>
             </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <FaTools className="text-green-600" />
+            <div className="bg-yellow-100 p-3 rounded-full">
+              <FaCalendarAlt className="text-yellow-600" />
             </div>
           </div>
         </div>
@@ -643,158 +700,100 @@ const Dashboard = () => {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
+              <FaChartLine className="mr-2" />
               Resumen
             </button>
             <button
-              onClick={() => setActiveTab('propiedades')}
+              onClick={() => setActiveTab('entregas')}
               className={`flex items-center py-4 px-1 text-sm font-medium border-b-2 ${
-                activeTab === 'propiedades'
+                activeTab === 'entregas'
                   ? 'border-green-500 text-green-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Solicitudes
+              <FaBoxOpen className="mr-2" />
+              Entregas
             </button>
             <button
-              onClick={() => setActiveTab('mantenimiento')}
+              onClick={() => setActiveTab('usuarios')}
               className={`flex items-center py-4 px-1 text-sm font-medium border-b-2 ${
-                activeTab === 'mantenimiento'
+                activeTab === 'usuarios'
                   ? 'border-green-500 text-green-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Mantenimiento
+              <FaUsers className="mr-2" />
+              Usuarios Activos
+            </button>
+            <button
+              onClick={() => setActiveTab('ayudas')}
+              className={`flex items-center py-4 px-1 text-sm font-medium border-b-2 ${
+                activeTab === 'ayudas'
+                  ? 'border-green-500 text-green-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FaTools className="mr-2" />
+              Tipos de Ayuda
             </button>
           </div>
         </div>
 
         <div className="p-6">
           {activeTab === 'resumen' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-medium text-gray-800 mb-4">Ingresos Mensuales</h2>
-                <p className="text-gray-600 mb-4">Solicitudes por mes en los últimos 6 meses</p>
-                
-                {/* Gráfico de barras simulado */}
-                <div className="h-64 bg-white rounded-lg relative">
-                  {/* Eje Y */}
-                  <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-gray-500 py-4">
-                    <span>$180k</span>
-                    <span>$135k</span>
-                    <span>$90k</span>
-                    <span>$45k</span>
-                    <span>$0k</span>
-                  </div>
-                  
-                  {/* Barras */}
-                  <div className="flex justify-around items-end h-full pl-10 pr-4 pt-4 pb-8">
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 bg-green-400 rounded-t-md" style={{ height: '100px' }}></div>
-                      <span className="mt-2 text-xs text-gray-500">Junio</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 bg-green-400 rounded-t-md" style={{ height: '120px' }}></div>
-                      <span className="mt-2 text-xs text-gray-500">Julio</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 bg-green-400 rounded-t-md" style={{ height: '150px' }}></div>
-                      <span className="mt-2 text-xs text-gray-500">Agosto</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 bg-green-400 rounded-t-md" style={{ height: '155px' }}></div>
-                      <span className="mt-2 text-xs text-gray-500">Septiembre</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 bg-green-400 rounded-t-md" style={{ height: '158px' }}></div>
-                      <span className="mt-2 text-xs text-gray-500">Octubre</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <div className="w-16 bg-green-400 rounded-t-md" style={{ height: '180px' }}></div>
-                      <span className="mt-2 text-xs text-gray-500">Noviembre</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h2 className="text-lg font-medium text-gray-800 mb-4">Estadísticas</h2>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">Tasa de ocupación</span>
-                        <span className="font-medium text-gray-900">75.0%</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">Propiedades en mantenimiento</span>
-                        <span className="font-medium text-gray-900">3</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">Contratos por renovar</span>
-                        <span className="font-medium text-gray-900">2</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">Tickets de alta prioridad</span>
-                        <span className="font-medium text-gray-900">2</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">Pagos pendientes</span>
-                        <span className="font-medium text-gray-900">5</span>
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Resumen de Actividad</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-base font-medium text-gray-700 mb-3">Entregas por Mes</h4>
+                  <div className="h-80">
+                    {/* Comentado por ahora, se puede descomentar si se importa Chart.js */}
+                    {/* <Bar 
+                      data={{
+                        labels: stats.entregasPorMes.map(item => item.mes),
+                        datasets: [{
+                          label: 'Entregas',
+                          data: stats.entregasPorMes.map(item => item.cantidad),
+                          backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                          borderColor: 'rgb(16, 185, 129)',
+                          borderWidth: 1
+                        }]
+                      }}
+                      options={barOptions}
+                    /> */}
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <FaChartBar className="mx-auto text-gray-400 text-5xl mb-4" />
+                        <p className="text-gray-500">Gráfico de entregas por mes</p>
+                        <p className="text-xs text-gray-400 mt-2">(Importa Chart.js para activar)</p>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <div>
-                  <h2 className="text-lg font-medium text-gray-800 mb-4">Actividad Reciente</h2>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="space-y-4">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <FaFileAlt className="text-green-600 text-sm" />
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <p className="text-sm font-medium text-gray-900">Nueva solicitud recibida</p>
-                          <p className="text-xs text-gray-500">Hace 5 minutos</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <FaUsers className="text-green-600 text-sm" />
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <p className="text-sm font-medium text-gray-900">Visita de trabajo social programada</p>
-                          <p className="text-xs text-gray-500">Hace 30 minutos</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <FaTools className="text-green-600 text-sm" />
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <p className="text-sm font-medium text-gray-900">Material entregado</p>
-                          <p className="text-xs text-gray-500">Hace 2 horas</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <FaClock className="text-green-600 text-sm" />
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <p className="text-sm font-medium text-gray-900">Recordatorio: Reunión de coordinación</p>
-                          <p className="text-xs text-gray-500">Mañana, 09:00</p>
-                        </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-base font-medium text-gray-700 mb-3">Entregas por Semana</h4>
+                  <div className="h-80">
+                    {/* Comentado por ahora, se puede descomentar si se importa Chart.js */}
+                    {/* <Line 
+                      data={{
+                        labels: stats.entregasPorSemana.map(item => item.semana),
+                        datasets: [{
+                          label: 'Entregas',
+                          data: stats.entregasPorSemana.map(item => item.cantidad),
+                          backgroundColor: 'rgba(99, 102, 241, 0.6)',
+                          borderColor: 'rgb(99, 102, 241)',
+                          borderWidth: 1,
+                          tension: 0.1
+                        }]
+                      }}
+                      options={barOptions}
+                    /> */}
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <FaChartLine className="mx-auto text-gray-400 text-5xl mb-4" />
+                        <p className="text-gray-500">Gráfico de entregas por semana</p>
+                        <p className="text-xs text-gray-400 mt-2">(Importa Chart.js para activar)</p>
                       </div>
                     </div>
                   </div>
@@ -802,10 +801,10 @@ const Dashboard = () => {
               </div>
             </div>
           )}
-          
-          {activeTab === 'propiedades' && (
+
+          {activeTab === 'entregas' && (
             <div>
-              <h2 className="text-lg font-medium text-gray-800 mb-4">Lista de Solicitudes</h2>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Detalles de Entregas</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -814,36 +813,50 @@ const Dashboard = () => {
                         ID
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Solicitante
+                        Beneficiario
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Tipo
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Estado
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Fecha
                       </th>
-                      <th scope="col" className="relative px-6 py-3">
-                        <span className="sr-only">Acciones</span>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estado
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {stats.solicitudesRecientes.map((solicitud) => (
-                      <tr key={solicitud.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{solicitud.id}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{solicitud.ciudadano.nombre} {solicitud.ciudadano.apellido}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{solicitud.categoria}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(solicitud.estado)}`}>
-                            <span className="capitalize">{solicitud.estado.replace('_', ' ')}</span>
-                          </span>
+                    {stats.solicitudesRecientes.map((sol) => (
+                      <tr key={sol.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          #{sol.id}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(solicitud.fecha)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <a href={`/solicitud/${solicitud.id}`} className="text-green-600 hover:text-green-900">Ver detalles</a>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center text-green-500">
+                              <FaUser />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {sol.ciudadano.nombre} {sol.ciudadano.apellido}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {sol.ciudadano.cedula}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {sol.categoria}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(sol.fecha)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(sol.estado)}`}>
+                            {sol.estado === 'completado' ? 'Entregado' : sol.estado}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -852,28 +865,148 @@ const Dashboard = () => {
               </div>
             </div>
           )}
-          
-          {activeTab === 'mantenimiento' && (
+
+          {activeTab === 'usuarios' && (
             <div>
-              <h2 className="text-lg font-medium text-gray-800 mb-4">Solicitudes de Mantenimiento</h2>
-              <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-                {stats.actividadesRecientes.map((actividad) => (
-                  <div key={actividad.id} className="bg-white p-4 rounded-md shadow-sm">
-                    <div className="flex justify-between">
-                      <div>
-                        <h3 className="font-medium text-gray-900">{actividad.descripcion}</h3>
-                        <p className="text-sm text-gray-500 mt-1">{actividad.solicitudId ? `Solicitud #${actividad.solicitudId}` : ''}</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Usuarios Más Activos</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-base font-medium text-gray-700 mb-3">Top 5 Usuarios por Entregas</h4>
+                  <div className="space-y-4">
+                    {stats.usuariosActivos.map((usuario, index) => (
+                      <div key={index} className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-500">
+                          <div className="font-semibold">{index + 1}</div>
+                        </div>
+                        <div className="ml-4 flex-1">
+                          <div className="text-sm font-medium text-gray-900">{usuario.nombre}</div>
+                          <div className="text-xs text-gray-500">{usuario.departamento}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-gray-900">{usuario.entregas}</div>
+                          <div className="text-xs text-gray-500">entregas</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">Asignado a:</p>
-                        <p className="text-sm font-medium">{actividad.usuario}</p>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-base font-medium text-gray-700 mb-3">Distribución por Departamento</h4>
+                  <div className="h-80">
+                    {/* Comentado por ahora, se puede descomentar si se importa Chart.js */}
+                    {/* <Doughnut
+                      data={{
+                        labels: ['Almacén', 'Despacho', 'Trabajo Social'],
+                        datasets: [{
+                          data: [45, 30, 25],
+                          backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(99, 102, 241, 0.7)',
+                            'rgba(245, 158, 11, 0.7)'
+                          ]
+                        }]
+                      }}
+                    /> */}
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <FaChartPie className="mx-auto text-gray-400 text-5xl mb-4" />
+                        <p className="text-gray-500">Gráfico de distribución por departamento</p>
+                        <p className="text-xs text-gray-400 mt-2">(Importa Chart.js para activar)</p>
                       </div>
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           )}
+
+          {activeTab === 'ayudas' && (
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Tipos de Ayuda Entregada</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-base font-medium text-gray-700 mb-3">Distribución por Tipo</h4>
+                  <div className="h-80">
+                    {/* Comentado por ahora, se puede descomentar si se importa Chart.js */}
+                    {/* <Doughnut
+                      data={{
+                        labels: stats.tiposAyuda.map(item => item.tipo),
+                        datasets: [{
+                          data: stats.tiposAyuda.map(item => item.cantidad),
+                          backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(99, 102, 241, 0.7)',
+                            'rgba(245, 158, 11, 0.7)',
+                            'rgba(236, 72, 153, 0.7)',
+                            'rgba(59, 130, 246, 0.7)'
+                          ]
+                        }]
+                      }}
+                    /> */}
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <FaChartPie className="mx-auto text-gray-400 text-5xl mb-4" />
+                        <p className="text-gray-500">Gráfico de distribución por tipo de ayuda</p>
+                        <p className="text-xs text-gray-400 mt-2">(Importa Chart.js para activar)</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-base font-medium text-gray-700 mb-3">Ranking de Ayudas Entregadas</h4>
+                  <div className="space-y-4">
+                    {stats.tiposAyuda.map((tipo, index) => (
+                      <div key={index} className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-500">
+                          <div className="font-semibold">{index + 1}</div>
+                        </div>
+                        <div className="ml-4 flex-1">
+                          <div className="text-sm font-medium text-gray-900">{tipo.tipo}</div>
+                          <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full" 
+                              style={{ width: `${(tipo.cantidad / stats.tiposAyuda[0].cantidad) * 100}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-gray-900">{tipo.cantidad}</div>
+                          <div className="text-xs text-gray-500">unidades</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Acciones rápidas */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Acciones Rápidas</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button
+            onClick={() => navigate('/entregas')}
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+          >
+            <FaTruck className="mr-2" /> Ver Todas las Entregas
+          </button>
+          <button
+            onClick={() => handleExportReport('pdf')}
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          >
+            <FaFilePdf className="mr-2" /> Exportar Reporte PDF
+          </button>
+          <button
+            onClick={() => handleExportReport('excel')}
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+          >
+            <FaFileExcel className="mr-2" /> Exportar Reporte Excel
+          </button>
         </div>
       </div>
     </div>
