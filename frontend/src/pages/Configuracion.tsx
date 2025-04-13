@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
 import { FaCog, FaUsers, FaBuilding, FaLock, FaUserShield } from 'react-icons/fa';
+import AdminUsuarios from './AdminUsuarios';
+import { UserRole } from '../services/supabase';
+import useAuth from '../hooks/useAuth';
 
 const Configuracion = () => {
   const [activeTab, setActiveTab] = useState('general');
+  const { hasRole } = useAuth();
 
   const tabs = [
     { id: 'general', label: 'General', icon: <FaCog /> },
-    { id: 'usuarios', label: 'Usuarios', icon: <FaUsers /> },
+    { id: 'usuarios', label: 'Usuarios', icon: <FaUsers />, requiredRole: UserRole.ADMIN },
     { id: 'empresa', label: 'Empresa', icon: <FaBuilding /> },
     { id: 'seguridad', label: 'Seguridad', icon: <FaLock /> },
-    { id: 'roles', label: 'Roles y Permisos', icon: <FaUserShield /> },
+    { id: 'roles', label: 'Roles y Permisos', icon: <FaUserShield />, requiredRole: UserRole.ADMIN },
   ];
+
+  // Filtrar pestañas según permisos
+  const filteredTabs = tabs.filter(tab => 
+    !tab.requiredRole || hasRole(tab.requiredRole)
+  );
 
   return (
     <div className="bg-white rounded-lg shadow-sm">
@@ -21,7 +30,7 @@ const Configuracion = () => {
         {/* Tabs Navigation - Horizontal */}
         <div className="border-b border-gray-200 mb-6">
           <div className="flex space-x-8">
-            {tabs.map((tab) => (
+            {filteredTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -107,64 +116,7 @@ const Configuracion = () => {
           )}
 
           {activeTab === 'usuarios' && (
-            <div>
-              <h2 className="text-lg font-medium text-gray-800 mb-4">Gestión de Usuarios</h2>
-              <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                <div className="flex justify-between mb-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Buscar usuarios..."
-                      className="w-64 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
-                  <button className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                    Añadir usuario
-                  </button>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap">Juan Pérez</td>
-                        <td className="px-6 py-4 whitespace-nowrap">juan@ejemplo.com</td>
-                        <td className="px-6 py-4 whitespace-nowrap">Administrador</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Activo
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <a href="#" className="text-green-600 hover:text-green-900">Editar</a>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap">María González</td>
-                        <td className="px-6 py-4 whitespace-nowrap">maria@ejemplo.com</td>
-                        <td className="px-6 py-4 whitespace-nowrap">Trabajo Social</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Activo
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <a href="#" className="text-green-600 hover:text-green-900">Editar</a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+            <AdminUsuarios />
           )}
 
           {activeTab === 'empresa' && (
@@ -343,62 +295,54 @@ const Configuracion = () => {
 
           {activeTab === 'roles' && (
             <div>
-              <h2 className="text-lg font-medium text-gray-800 mb-4">Roles y Permisos</h2>
-              <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                <div className="flex justify-end mb-4">
-                  <button className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                    Crear nuevo rol
-                  </button>
-                </div>
+              <h2 className="text-lg font-medium text-gray-800 mb-4">Gestión de Roles y Permisos</h2>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-gray-700 mb-4">
+                  Configure los roles y permisos disponibles en el sistema. 
+                  Esta sección permite establecer qué acciones puede realizar cada rol.
+                </p>
+
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-100">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre del Rol</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuarios</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ver Solicitudes</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Crear Solicitudes</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Editar Solicitudes</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aprobar Solicitudes</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Administrar Usuarios</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap font-medium">Administrador</td>
-                        <td className="px-6 py-4">Acceso completo a todas las funciones del sistema</td>
-                        <td className="px-6 py-4 whitespace-nowrap">2</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <a href="#" className="text-green-600 hover:text-green-900 mr-3">Editar</a>
-                          <a href="#" className="text-red-600 hover:text-red-900">Eliminar</a>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap font-medium">Recepción</td>
-                        <td className="px-6 py-4">Puede recibir y procesar solicitudes iniciales</td>
-                        <td className="px-6 py-4 whitespace-nowrap">3</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <a href="#" className="text-green-600 hover:text-green-900 mr-3">Editar</a>
-                          <a href="#" className="text-red-600 hover:text-red-900">Eliminar</a>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap font-medium">Trabajo Social</td>
-                        <td className="px-6 py-4">Gestiona evaluaciones sociales y visitas</td>
-                        <td className="px-6 py-4 whitespace-nowrap">4</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <a href="#" className="text-green-600 hover:text-green-900 mr-3">Editar</a>
-                          <a href="#" className="text-red-600 hover:text-red-900">Eliminar</a>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap font-medium">Despacho Superior</td>
-                        <td className="px-6 py-4">Aprobación final de solicitudes y gestión de recursos</td>
-                        <td className="px-6 py-4 whitespace-nowrap">2</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <a href="#" className="text-green-600 hover:text-green-900 mr-3">Editar</a>
-                          <a href="#" className="text-red-600 hover:text-red-900">Eliminar</a>
-                        </td>
-                      </tr>
+                      {Object.values(UserRole).map(role => (
+                        <tr key={role}>
+                          <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-800">{role}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <input type="checkbox" checked={true} disabled={role === UserRole.ADMIN} className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <input type="checkbox" checked={role !== UserRole.USUARIO} disabled={role === UserRole.ADMIN} className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <input type="checkbox" checked={role === UserRole.ADMIN || role === UserRole.TRABAJADOR_SOCIAL || role === UserRole.REPRESENTANTE} disabled={role === UserRole.ADMIN} className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <input type="checkbox" checked={role === UserRole.ADMIN || role === UserRole.REPRESENTANTE || role === UserRole.DESPACHO} disabled={role === UserRole.ADMIN} className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <input type="checkbox" checked={role === UserRole.ADMIN} disabled={role === UserRole.ADMIN} className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded" />
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
+                </div>
+                
+                <div className="flex justify-end mt-6">
+                  <button className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                    Guardar cambios
+                  </button>
                 </div>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaHome, 
   FaClipboardList, 
@@ -10,9 +10,13 @@ import {
   FaRobot,
   FaBars,
   FaTimes,
-  FaBell
+  FaBell,
+  FaSignOutAlt,
+  FaUser
 } from 'react-icons/fa';
 import { MdDashboard, MdDescription, MdPerson, MdGroups, MdMilitaryTech, MdLocalShipping, MdSettings, MdQrCode2 } from 'react-icons/md';
+import useAuth from '../hooks/useAuth';
+import { UserRole } from '../services/supabase';
 
 interface LayoutProps {
   children: ReactNode;
@@ -20,21 +24,48 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const location = useLocation();
+  const { user, logout, userRoles } = useAuth();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // El hook se encarga de la redirección
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
+
+  // Obtener el rol principal para mostrar en la UI (el primero si hay varios)
+  const displayRole = userRoles.length > 0 
+    ? userRoles.includes(UserRole.ADMIN) 
+      ? 'Administrador' 
+      : userRoles.includes(UserRole.TRABAJADOR_SOCIAL) 
+        ? 'Trabajador Social'
+        : userRoles.includes(UserRole.REPRESENTANTE)
+          ? 'Representante'
+          : userRoles.includes(UserRole.DESPACHO)
+            ? 'Despacho Superior'
+            : 'Usuario'
+    : 'Usuario';
+
   const sidebarItems = [
     { name: 'Recepción', path: '/solicitudes', icon: <MdDescription /> },
-    { name: 'Representante', path: '/representante', icon: <MdPerson /> },
-    { name: 'Trabajo Social', path: '/trabajo-social', icon: <MdGroups /> },
-    { name: 'Despacho Superior', path: '/despacho-superior', icon: <MdMilitaryTech /> },
-    { name: 'Entregas', path: '/entregas', icon: <MdLocalShipping /> },
-    { name: 'Configuración', path: '/configuracion', icon: <MdSettings /> },
+    { name: 'Representante', path: '/representante', icon: <MdPerson />, roles: [UserRole.ADMIN, UserRole.REPRESENTANTE] },
+    { name: 'Trabajo Social', path: '/trabajo-social', icon: <MdGroups />, roles: [UserRole.ADMIN, UserRole.TRABAJADOR_SOCIAL] },
+    { name: 'Despacho Superior', path: '/despacho-superior', icon: <MdMilitaryTech />, roles: [UserRole.ADMIN, UserRole.DESPACHO] },
+    { name: 'Configuración', path: '/configuracion', icon: <MdSettings />, roles: [UserRole.ADMIN] },
   ];
+
+  // Filtrar los elementos del sidebar según los roles del usuario
+  const filteredSidebarItems = sidebarItems.filter(item => {
+    if (!item.roles) return true; // Sin restricción de roles
+    return userRoles.some(role => item.roles?.includes(role)) || userRoles.includes(UserRole.ADMIN);
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -54,9 +85,9 @@ const Layout = ({ children }: LayoutProps) => {
           </button>
         </div>
         
-        <div className="py-4 overflow-y-auto">
-          <nav className="px-2 space-y-1">
-            {sidebarItems.slice(0, -1).map((item) => (
+        <div className="py-4 overflow-y-auto flex flex-col h-[calc(100%-4rem)]">
+          <nav className="px-2 space-y-1 flex-grow">
+            {filteredSidebarItems.slice(0, -1).map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -90,18 +121,44 @@ const Layout = ({ children }: LayoutProps) => {
               Agente IA
             </Link>
             
-            <Link
-              to={sidebarItems[sidebarItems.length - 1].path}
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-all ${
-                location.pathname.includes(sidebarItems[sidebarItems.length - 1].path)
-                  ? 'bg-green-700 text-white'
-                  : 'text-green-100 hover:bg-green-500 hover:text-white'
-              }`}
+            {(userRoles.includes(UserRole.ADMIN)) && (
+              <Link
+                to={filteredSidebarItems[filteredSidebarItems.length - 1].path}
+                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-all ${
+                  location.pathname.includes(filteredSidebarItems[filteredSidebarItems.length - 1].path)
+                    ? 'bg-green-700 text-white'
+                    : 'text-green-100 hover:bg-green-500 hover:text-white'
+                }`}
+              >
+                <span className="mr-3 h-5 w-5">{filteredSidebarItems[filteredSidebarItems.length - 1].icon}</span>
+                {filteredSidebarItems[filteredSidebarItems.length - 1].name}
+              </Link>
+            )}
+            
+            {/* Botón de cerrar sesión */}
+            <button
+              onClick={handleLogout}
+              className="w-full group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-all text-green-100 hover:bg-green-500 hover:text-white"
             >
-              <span className="mr-3 h-5 w-5">{sidebarItems[sidebarItems.length - 1].icon}</span>
-              {sidebarItems[sidebarItems.length - 1].name}
-            </Link>
+              <FaSignOutAlt className="mr-3 h-5 w-5" />
+              Cerrar Sesión
+            </button>
           </nav>
+          
+          {/* Perfil de usuario */}
+          {user && (
+            <div className="mt-auto border-t border-green-500 p-4">
+              <div className="flex items-center">
+                <div className="bg-green-700 rounded-full p-2 mr-3">
+                  <FaUser className="text-white" />
+                </div>
+                <div className="overflow-hidden">
+                  <p className="text-sm font-medium text-white truncate">{user.user_metadata?.full_name || user.email}</p>
+                  <p className="text-xs text-green-200 capitalize">Rol: {displayRole}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       
@@ -123,51 +180,9 @@ const Layout = ({ children }: LayoutProps) => {
                location.pathname.includes('/representante') ? 'Panel del Representante' :
                location.pathname.includes('/trabajo-social') ? 'Trabajo Social' :
                location.pathname.includes('/despacho-superior') ? 'Despacho Superior/Secretaría' :
-               location.pathname.includes('/entregas') ? 'Gestión de Entregas' :
                location.pathname.includes('/agente-ia') ? 'Asistente IA' :
                location.pathname.includes('/configuracion') ? 'Configuración' : 'Juntas Comunales'}
             </h1>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <button 
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="p-2 text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded-full focus:outline-none"
-              >
-                <FaBell />
-                <span className="absolute top-0 right-0 inline-block w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-              
-              {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-20">
-                  <div className="py-2 px-4 bg-green-600 text-white text-sm font-semibold">
-                    Notificaciones (3)
-                  </div>
-                  <div className="divide-y divide-gray-200">
-                    <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                      <p className="text-sm font-medium text-gray-700">Nueva solicitud recibida</p>
-                      <p className="text-xs text-gray-500">Hace 5 minutos</p>
-                    </div>
-                    <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                      <p className="text-sm font-medium text-gray-700">Solicitud aprobada</p>
-                      <p className="text-xs text-gray-500">Hace 30 minutos</p>
-                    </div>
-                    <div className="px-4 py-3 hover:bg-gray-50 cursor-pointer">
-                      <p className="text-sm font-medium text-gray-700">Recordatorio: Reunión mensual</p>
-                      <p className="text-xs text-gray-500">Hoy, 15:00</p>
-                    </div>
-                  </div>
-                  <div className="py-2 px-4 bg-gray-50 text-xs font-medium text-green-600 hover:text-green-800 cursor-pointer">
-                    Ver todas las notificaciones
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="h-8 w-8 rounded-full bg-green-600 flex items-center justify-center text-white cursor-pointer">
-              <span className="text-sm font-semibold">JC</span>
-            </div>
           </div>
         </div>
         

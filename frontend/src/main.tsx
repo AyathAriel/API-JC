@@ -1,14 +1,15 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App'
-import './index.css'
 import { BrowserRouter } from 'react-router-dom'
+import App from './App.tsx'
+import './index.css'
 import { ConfigProvider } from './context/ConfigContext'
 import { ToastProvider } from './context/ToastContext'
 import Toast from './components/ui/Toast'
 import { AIContextProvider } from './utils/AIContextProvider'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import { AuthProvider } from './context/AuthContext'
 
 // Create a theme instance.
 const theme = createTheme({
@@ -34,19 +35,43 @@ const theme = createTheme({
   },
 });
 
+// Configuración de errores no capturados para facilitar depuración
+window.addEventListener('error', (event) => {
+  console.error('Error no capturado:', event.error)
+})
+
+// Configuración para autenticación y entorno de desarrollo
+if (import.meta.env.DEV) {
+  // Permitir más tiempo para operaciones asíncronas (útil para autenticación)
+  setTimeout(() => {}, 100)
+  
+  // Configuración especial para autenticación en desarrollo
+  const authOverrides = {
+    allowRegistrationWithoutVerification: true,
+    specialUserIds: ['dc425d38-b183-465e-9f68-40bdc0a14e22'],
+  }
+  
+  // Almacenar en localStorage para acceso global
+  localStorage.setItem('dev.auth.config', JSON.stringify(authOverrides))
+  
+  console.info('Configuración de desarrollo activada')
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <ToastProvider>
-        <ConfigProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Toast />
-            <AIContextProvider>
-              <App />
-            </AIContextProvider>
-          </ThemeProvider>
-        </ConfigProvider>
+        <AuthProvider>
+          <ConfigProvider>
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              <Toast />
+              <AIContextProvider>
+                <App />
+              </AIContextProvider>
+            </ThemeProvider>
+          </ConfigProvider>
+        </AuthProvider>
       </ToastProvider>
     </BrowserRouter>
   </React.StrictMode>,
